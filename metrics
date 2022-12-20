@@ -9,21 +9,33 @@ $hostname = getenv('SHELLY_HOSTNAME');
 $username = getenv('SHELLY_HTTP_USERNAME');
 $password = getenv('SHELLY_HTTP_PASSWORD');
 
-$url = 'http://' . $hostname . '/meter/0';
+$path = '/rpc/Switch.GetStatus';
+$get = [
+  'id' => 0,
+];
+
+$src = 'prometheus_exporter';
+$method = 'Switch.GetStatus';
+
+$url = 'http://' . $hostname . $path . '?' . http_build_query($get);
 
 $curl = curl_init();
 
+$options = [
+  CURLOPT_URL => $url,
+  CURLOPT_RETURNTRANSFER => 1,
+];
+
 # Basic HTTP Authentication (if set).
 if (!empty($username) && !empty($password)) {
-  curl_setopt($curl, CURLOPT_HTTPAUTH, CURLAUTH_BASIC);
-  curl_setopt($curl, CURLOPT_USERPWD, "$username:$password");
+  $options[CURLOPT_HTTPAUTH] = CURLAUTH_DIGEST;
+  $options[CURLOPT_USERPWD] = $username . ':' . $password;
 }
 
-curl_setopt($curl, CURLOPT_URL, $url);
-curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
-
+curl_setopt_array($curl, $options);
 # Call the URL with curl.
 $result = curl_exec($curl);
+
 if (curl_errno($curl)) {
   $error_message = curl_error($curl);
 }
@@ -39,14 +51,30 @@ if (isset($error_message)) {
 $results = json_decode($result);
 
 ?>
+# HELP output 1 if the output channel is currently on, 0 otherwise
+# TYPE output gauge
+output <?php print (int) $results->output; ?>
+
 # HELP power Current real AC power being drawn, in Watts
 # TYPE power gauge
-power <?php print $results->power; ?>
+power <?php print $results->apower; ?>
 
-# HELP is_valid Whether power metering self-checks OK
-# TYPE is_valid gauge
-is_valid <?php print $results->is_valid; ?>
+# HELP voltage Last measured voltage in Volts
+# TYPE voltage gauge
+voltage <?php print $results->voltage; ?>
 
-# HELP total Total energy consumed by the attached electrical appliance in Watt-minute
+# HELP current Last measured current in Amperes
+# TYPE current gauge
+current <?php print $results->current; ?>
+
+# HELP total Total energy consumed by the attached electrical appliance in Watt-hours
 # TYPE total gauge
-total <?php print $results->total; ?>
+total <?php print $results->aenergy->total; ?>
+
+# HELP tempc Temperature in Celsius
+# TYPE tempc gauge
+tempc <?php print $results->temperature->tC; ?>
+
+# HELP tempf Temperature in Fahrenheit
+# TYPE tempf gauge
+tempf <?php print $results->temperature->tF; ?>
