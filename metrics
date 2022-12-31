@@ -55,7 +55,7 @@ $results = json_decode($result);
 # TYPE output gauge
 output <?php print (int) $results->output; ?>
 
-# HELP power Current real AC power being drawn, in Watts
+# HELP power real AC power being drawn, in Watts
 # TYPE power gauge
 power <?php print $results->apower; ?>
 
