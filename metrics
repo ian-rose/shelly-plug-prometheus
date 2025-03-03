@@ -41,6 +41,8 @@ if (curl_errno($curl)) {
 }
 curl_close($curl);
 
+header('Content-Type: text/plain; version=0.0.4; charset=utf-8; escaping=values');
+
 # Handle errors.
 if (isset($error_message)) {
   echo 'Error: ' . $error_message;
